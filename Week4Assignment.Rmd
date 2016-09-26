@@ -1,0 +1,101 @@
+---
+title: "Week4Assignment"
+author: "Bin Lin"
+date: "2016-9-23"
+output: html_document
+---
+
+In this project, you're given a text file with chess tournament results where the information has some structure. Your job is to create an R Markdown file that generates a .CSV file with the following information for all of the players::
+Player's Name, Player's State, Total Number of Points, Player's Pre-Rating, and Average Pre Chess Rating of Opponents
+
+First of all, we can go to the url website of the original data: https://bbhosted.cuny.edu/bbcswebdav/pid-25842547-dt-content-rid-119781398_1/courses/SPS01_DATA_607_01_1169_1/SPS01_DATA_607_01_1169_1_ImportedContent_20160815114002/SPS01_DATA_607_01_1162_1_ImportedContent_20160126062155/tournamentinfo.txt
+
+
+This website can really give us an idea about how this dataset is structured. It seems to me everything is seperated by an "|". Therefore, the first step I am trying to do is to load the "stringr" package which I am going to use for regular expression. I loaded the raw data from my local machine and set the seperator to be "|".
+```{r}
+library(stringr)
+raw_data <- read.csv("C:/Users/blin261/Downloads/tournamentinfo.txt", header = FALSE, stringsAsFactors = FALSE, sep = "|")
+```
+
+
+The following codes just help me to explore the raw data. 
+```{r}
+head(raw_data)
+str(raw_data)
+class(raw_data)
+rownames(raw_data)
+colnames(raw_data)
+```
+
+
+This code really helps me visualize the raw data, because the raw data contains lots of "------", which really causes a lot of confusion. More importantly, this subset tells me which variables are located at which specific rows.  
+```{r}
+raw_data[-seq(1,196,3), 1:10]
+```
+
+
+Then I am going to extract the information I need and create vectors with appropriate data types.
+```{r}
+player_number <- as.numeric(raw_data[seq(5,195,3), "V1"])
+head(player_number)
+
+player_name <- raw_data[seq(5,195,3),"V2"]
+player_name <- str_trim(player_name)
+head(player_name)
+
+player_state <- raw_data[seq(6,195,3), "V1"]
+player_state <- str_trim(player_state)
+head(player_state)
+
+total_number_of_points <- as.numeric(raw_data[seq(5,195,3), "V3"])
+head(total_number_of_points)
+
+```
+
+
+I used two steps of regular expression techniques to draw the pre-rating data from the raw data
+```{r}
+pre_rating <- raw_data[seq(6,195,3), "V2"]
+head(pre_rating)
+
+for (i in 1:length(pre_rating))
+{
+  #I want any string that starts with "R" followed by a space and followed by more than 1 digits.
+  pre_rating[i] <- str_extract(pre_rating[i], "R:[:space:]+[:digit:]+")
+  
+  #After I got the string containing pre-rating, I get rid of the "R" and space, then convert these digits from string     into numeric values.
+  pre_rating[i] <- str_extract(pre_rating[i], "[[:digit:]]+")
+}
+
+head(pre_rating)
+```
+
+
+The last variable I want is the average of opponents' rating for each individual players. The first step invloves getting those opponents' player numbers, which can be found on columns 4 to 10. I only need to extract strings that refer to numeric values from these columns.  After I got those strings, I convert them into numeric values and store them into a variable called opponent_number. Then I found their corresponding pre-rating values, use the mean function to get the average of these opponents' pre-rating values. 
+
+```{r}
+
+average_opponent_point <- vector()
+
+for (i in seq(5,195,3))
+{
+    {
+      opponent_number<- as.numeric(unlist(str_extract_all(raw_data[i, 4:10], "[[:digit:]]+")))
+      average_opponent_point[(i-2)/3] <- mean(as.numeric(pre_rating[opponent_number]), na.rm = TRUE)
+    }
+}  
+average_opponent_point
+```
+
+Then I put all the vectors together and create a data frame called chess_tournament.
+```{r}
+chess_tournament <- data.frame(player_number, player_name, player_state, total_number_of_points, pre_rating, average_opponent_point)
+head(chess_tournament)
+```
+
+
+In the end, I export the output into a csv file in my working directory. 
+```{r}
+write.csv(chess_tournament, file = "chess_tournament_result", row.names=FALSE)
+```
+
