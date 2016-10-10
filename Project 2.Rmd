@@ -1,0 +1,125 @@
+---
+title: "Project 2"
+author: "Bin Lin"
+date: "2016-10-9"
+output: html_document
+---
+
+Dataset 1: Religion and Income Distribution 
+Contributor: Yifei Li
+Source: Introduction to R. (2013). Retrieved from https://ramnathv.github.io
+
+```{r}
+#install.packages("dplyr")
+#install.packages("tidyr")
+#install.packages("ggplot2")
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+
+```{r}
+religion_income <- read.csv("C:/Users/blin261/Desktop/DATA607/Religion_Income.csv", header = TRUE, stringsAsFactors = FALSE, check.names=FALSE)
+religion_income
+
+long_data <- religion_income%>%
+  gather(income_group, frequency, 2:10)
+head(long_data)
+
+
+r_i <- long_data%>%
+  group_by(religion)%>%
+  mutate(total = sum(frequency), percentage = frequency/total)%>%
+  arrange(religion)
+head(r_i)
+
+ggplot(data = r_i, aes(x = income_group, y = percentage)) + geom_bar(stat="identity") + facet_wrap(~religion) 
+
+```
+
+
+Dataset 2: 
+```{r}
+gaming_job_broadband <- read.csv("C:/Users/blin261/Desktop/DATA607/GamingJobsandBroadband.csv", header = TRUE, stringsAsFactors = FALSE, check.names=FALSE)
+head(gaming_job_broadband)
+```
+
+
+```{r}
+gaming <- gaming_job_broadband %>%
+  select(game4, emplnw, age, educ2, inc)
+head(gaming)
+
+gaming$game4[gaming$game4 == 1] <- "gamer"
+gaming$game4[gaming$game4 == 2] <- "not_gamer"
+
+gaming$emplnw[gaming$emplnw == 1] <- "full_time"
+gaming$emplnw[gaming$emplnw == 2] <- "part_time"
+gaming$emplnw[gaming$emplnw == 3] <- "retired"
+gaming$emplnw[gaming$emplnw == 4] <- "not_employed"
+
+
+gaming$educ2[gaming$educ2 == 1] <- "less_than_HS"
+gaming$educ2[gaming$educ2 == 2] <- "HS_incomplete"
+gaming$educ2[gaming$educ2 == 3] <- "HS"
+gaming$educ2[gaming$educ2 == 4] <- "some_college"
+gaming$educ2[gaming$educ2 == 5] <- "associate"
+gaming$educ2[gaming$educ2 == 6] <- "bachelor"
+gaming$educ2[gaming$educ2 == 7] <- "some_postgraduate"
+gaming$educ2[gaming$educ2 == 8] <- "post_graduate"
+
+
+gaming$inc[gaming$inc == 1] <- "<$10k"
+gaming$inc[gaming$inc == 2] <- "$10k-20k"
+gaming$inc[gaming$inc == 3] <- "$20-30k"
+gaming$inc[gaming$inc == 4] <- "$30-40k"
+gaming$inc[gaming$inc == 5] <- "$40k-50k"
+gaming$inc[gaming$inc == 6] <- "$50k-75k"
+gaming$inc[gaming$inc == 7] <- "$75k-100k"
+gaming$inc[gaming$inc == 8] <- "$100k-150k"
+gaming$inc[gaming$inc == 9] <- "$>150k"
+
+head(gaming)
+
+gaming <- gaming%>%
+  na.omit()%>%
+  filter(game4 == "gamer" || game4 == "not_gamer")
+head(gaming)
+
+gaming <- gaming%>%
+  filter(game4 == "gamer" || game4 == "not_gamer")%>%
+  filter(emplnw == "full_time" || emplnw == "part_time" || emplnw ==  "retired" || emplnw == "not_employed")%>%
+  filter(educ2 == "less_than_HS" || educ2 == "HS_incomplete" || educ2 == "HS" || educ2 == "some_college" || edu2 == "associate" || educ2 == "bachelor" || educ2 == "some_postgraduate" || educ2 == "post_graduate")%>%
+  filter(inc == "<$10k" || inc == "$10k-20k" || inc == "$20k-30k" || inc == "$30k-40k" || inc == "$40k-50k" || inc == "$50k-75k" || inc == "$75k-100k" || inc == "$100k-150k" || inc == "$>150k")%>%
+ group_by(game4, emplnw)
+head(gaming)
+```
+
+
+Dataset 3:
+
+```{r}
+lending_club <- read.csv("C:/Users/blin261/Desktop/DATA607/LoanStats_2016Q2.csv",header = TRUE, stringsAsFactors = FALSE)
+head(lending_club)
+```
+
+```{r}
+
+loan <- lending_club %>%
+  select(term, grade, loan_amnt, annual_inc, int_rate)%>%
+  na.omit()%>%
+  group_by(term, grade)%>%
+  mutate(loantoincome_ratio = loan_amnt/annual_inc, total = n())%>%
+  arrange(term, grade, loan_amnt, annual_inc, int_rate)
+head(loan)
+
+
+ggplot(data = loan, aes(x = grade, y = total)) + geom_bar(stat="identity") + facet_wrap(~term)
+
+
+ggplot(data = loan, aes(x = loantoincome_ratio, y = int_rate, color = grade)) + geom_point(stat="identity") + facet_wrap(~term) + xlim(0, 1)
+```
+
