@@ -175,8 +175,6 @@ The first step is to load the data, apparently from the dimention function, we k
 ```{r}
 lending_club <- read.csv("C:/Users/blin261/Desktop/DATA607/LoanStats_2016Q2.csv", header = TRUE, stringsAsFactors = FALSE)
 dim(lending_club)
-head(lending_club)
-str(lending_club)
 ```
 
 
