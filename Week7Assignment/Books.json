@@ -1,0 +1,30 @@
+{
+"Textbooks":
+	[{
+		"Book_Title": "Automated Data Collection with R",
+		"Author": "Simon Munzert, Christian Rubba, Peter Meißner, Dominic Nyhuis",
+		"Publishers": "Wiley",
+		"Publishing_Dates": "January 20, 2015",
+		"Pages": "480",
+		"ISBN": "978-1118834817",
+		"Languages": "English"
+	}
+	{
+		"Book_Title": "Data Science for Business",
+		"Author": "Foster Provost, Tom Fawcett",
+		"Publishers": "O'Reilly Media",
+		"Publishing_Dates": "August 19, 2013",
+		"Pages": "414",
+		"ISBN": "978-1449361327",
+		"Languages": "English"
+	}
+	{
+		"Book_Title": "R for Everyone: Advanced Analytics and Graphics",
+		"Author": "Jared P. Lander",
+		"Publishers": "Addison-Wesley Professional",
+		"Publishing_Dates": "December 29, 2013",
+		"Pages": "464",
+		"ISBN": "978-1449361327",
+		"Languages": "English"
+	}]
+}
