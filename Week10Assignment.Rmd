@@ -1,0 +1,91 @@
+---
+title: "Week10Assignment"
+author: "Bin Lin"
+date: "2016-11-6"
+output: html_document
+---
+
+
+```{r}
+#install.packages("tm")
+#install.packages("SnowballC")
+#install.packages("RTextTools")
+#install.packages("caret")
+library(RCurl)
+library(XML)
+library(stringr)
+library(tm)
+library(tidyr)
+library(dplyr)
+library(SnowballC)
+library(RTextTools)
+library(caret)
+```
+
+```{r}
+ham_dir <- "C:/Users/blin261/Desktop/DATA607/spamham/easy_ham/"
+ham_files <- list.files(path = ham_dir)
+head(ham_files)
+
+ham <- c()
+for (i in 1: length(ham_files)) {
+  tmp <- readLines(str_c(ham_dir, ham_files[i]))
+  tmp <- str_c(tmp, collapse = "")
+  ham <- c(ham, tmp)
+}
+ham_corpus <- Corpus(VectorSource(ham))
+
+for (i in 1: length(ham_corpus)) {
+  meta(ham_corpus[[i]], "Type") <- "Ham"
+}
+ham_corpus
+
+
+spam_dir <- "C:/Users/blin261/Desktop/DATA607/spamham/spam_2/"
+spam_files <- list.files(path = spam_dir)
+head(spam_files)
+
+spam <- c()
+for (i in 1: length(spam_files)) {
+  tmp <- readLines(str_c(spam_dir, spam_files[i]))
+  tmp <- str_c(tmp, collapse = "")
+  spam <- c(spam, tmp)
+}
+spam_corpus <- Corpus(VectorSource(spam))
+
+for (i in 1: length(spam_corpus)) {
+  meta(spam_corpus[[i]], "Type") <- "Spam"
+  
+}
+spam_corpus
+
+
+total_corpus <- c(ham_corpus, spam_corpus)
+total_corpus <- tm_map(total_corpus, removeNumbers)
+total_corpus <- tm_map(total_corpus, str_replace_all, pattern = "[[:punct:]]", replacement = " ")
+total_corpus <- tm_map(total_corpus, removeWords, words = stopwords("en"))
+total_corpus <- tm_map(total_corpus, tolower)
+total_corpus <- tm_map(total_corpus, stemDocument)
+total_corpus <- tm_map(total_corpus, PlainTextDocument)
+tdm <- TermDocumentMatrix(total_corpus)
+tdm
+```
+
+
+```{r}
+meta_data <- meta(spam_corpus, "Type")
+head(meta_data)
+
+meta_data <- meta(ham_corpus, "Type")
+head(meta_data)
+
+meta_data <- total_corpus$meta$type
+head(meta_data)
+
+
+dtm <- DocumentTermMatrix(total_corpus)
+dtm <- removeSparseTerms(dtm, 1-(10/length(total_corpus)))
+dtm
+
+
+```
