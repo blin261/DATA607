@@ -1,0 +1,40 @@
+---
+title: "Week11Discussion"
+author: "Bin Lin"
+date: "2016-11-11"
+output: html_document
+---
+
+New York Times Recommendation Engines
+http://www.nytimes.com/recommendations
+
+1. Scenario Design Analysis:
+
+Who are your target users?
+Readers who are following news and major events across the globe.
+
+
+What are their key goals?
+To have those readers spend more time on its new websites and read more articles, since NYT published over 300 articles every day. 
+
+How can you help them accomplish those goals?
+The recommendation algorithm should be able to find the right news at the right times for all readers and offer recommendation in a personalized manner. 
+
+
+2. Attempt to reverse engineer what you can about the site, from the site interface and any available information that you can find on the Internet or elsewhere.
+
+According to the article, NYT adopts CollaborativeTopic Modeling, which contains 4 components. 
+
+Model content: For example, some articles can be classified as 50% politics and 50% arts. 
+
+Adjust the model by readers: If certain readers are interested in politics 90% of time, those articles with more political contents are recommended first. 
+
+Model Readers Preference: Basically, average together all topics of the articles that have been read by that reader. article with 40% politics and 60% arts and article with 60% politics and 40% art will end up with 50/50 politics and art. For those articles readers have read, we might assign 90% of the weight, for those articles that have not been read, we might assign 10% of the weight, while calculating the final preference of each individual reader. 
+
+Making recommedation: Finally, the algorithm gives us the breakdown of content and reader preferences, we can match them based on similarity.
+
+
+3. Include specific recommendations about how to improve the site's recommendation capabilities going forward. 
+NYT can improve its recommendatin capabilities by introducing sequence recommendation. The existing algorithm might recommend articles that are too similar to each other. Reader will eventually get bored reading same materials. After readers have finished reading the first article, he or she may be curious about more supplemental information that is unexplained on the first article. That is when sequence recommendation plays its major role. It can introduce articles that provides additional reading.  
+
+
