@@ -1,0 +1,101 @@
+---
+title: "Project4"
+author: "Bin Lin"
+date: "2016-11-16"
+output: html_document
+---
+
+Project Instruction:
+
+For Project 4, you should take information from a relational database and migrate it to a NoSQL database of your own choosing.
+For the relational database, you might use the flights database, the tb database, the "data skills" database your team created for Project 3, or another database of your own choosing or creation.
+For the NoSQL database, you may use MongoDB, Neo4j (which we introduce in Week 12), or another NoSQL database of your choosing.
+Your migration process needs to be reproducible.  R code is encouraged, but not required.  You should also briefly describe the advantages and disadvantages of storing the data in a relational database vs. your NoSQL database.
+ 
+
+
+I am picking MongoDB to be my NoSQL database. Because it is my first time running something on MongoDB, I need to install the software into my local machine. There is a step-by-step tutorial that tells me how to download, install, and configure MongoDB. https://docs.mongodb.com/getting-started/shell/tutorial/install-mongodb-on-windows/
+
+There are two ways we can run MongoDB. First is by entering mongod on the command window, second is by simply clicking mongod.exe file that exists in this directory: C:\Program Files\MongoDB\Server\3.2\bin
+
+
+I need to install any required libraries. RMySQL and mongolite are two that are heavily used in this project.
+```{r}
+#install.packages("RODBC")
+#install.packages("RMySQL")
+#install.packages("DBI")
+#install.packages("mongolite")
+
+library(RODBC)
+library(RMySQL)
+library(DBI)
+library(mongolite)
+library(jsonlite)
+```
+
+
+From previous assignment, I have already set up the flights database in my local machine. It is also been set to be default schema. The following code will create connection to this existing MySQl database. I am setting both username and password to be NULL, so anybody will gain access. 
+```{r}
+rmysql.settingsfile<-"C:/ProgramData/MySQL/MySQL Server 5.7/my.ini"
+con <- dbConnect(RMySQL::MySQL(), default.file=rmysql.settingsfile, dbname = "flights", user=NULL, password=NULL)
+```
+
+
+I need to import data from MySQL to R. There are few tables in the database. I just pick the flights table and extract all of its data/ 
+```{r}
+flights <- dbGetQuery(con,"select * from flights")
+dbListFields(con, "flights")
+head(flights)
+```
+
+
+The function mongo from package mongolite build a mongo connection object. Then I insert the data from R into MongoDB object.
+```{r}
+mongo_data <- mongo(collection = "flights")
+mongo_data$insert(flights)
+mongo_data$count()
+nrow(flights)
+```
+
+
+There are functions exist in the mongolite package which we can run to do analysis of MongoDB dataset directly in R. 
+```{r}
+testing_data <- mongo_data$find('{"carrier": "UA" , "dest": "IAH"}')
+head(testing_data)
+mongo_data$distinct("carrier")
+mongo_data$insert('{"year": "2016", "mongth": "1", "day": "1", "dep_time": "500", "arr_time": "800", "arr_delay": 10, "carrier": "XYZ", "tailnum": "XXXXXX", "flight": "XXXXXX", "origin": "XXX", "dest": "XXX", "air_time": "300", "distance": "1000", "hour": "5", "minute": "30"}')
+
+#After inserting new observation, we are able to find the one entry that is just added, which means we are able to change the MongoDB data from R.
+mongo_data$find('{"year": "2016"}')
+
+#The following code made a chart that display the average arrival delay time. 
+mongo_data$aggregate('[{"$group":{"_id":"$carrier", "average delay":{"$avg":"$arr_delay"}}}]')
+```
+
+
+To disconnect the object is important too, otherwise if we run the code the second time, the data entry will add up incrementally.  
+```{r}
+class(mongo_data)
+mongo_data$drop
+```
+
+
+Relational Database VS. NoSQL
+
+Advantage of NoSQL: 
+1. There is no predefined schema, so that it is easier to update the data
+2. NoSQL can handle unstructured data, and are much more flexible. 
+3. NoSQl database is easier to scale. It is a better choice for big data. On the other hand, RDBMS requires big, expensive, and multiple servers.
+4. NoNoSQL server is cheaper and maintain.
+5. NoSQL can increase the data output and performance by caching data in system memory, while RDBMS need a separate infrastucture. 
+
+Disavantage of NoSQL:
+1. NoSQL is still new to many companies. Many key features need to be developed. 
+2. The vendors are usually small start-up companies. On the other hand, RDBMS are supported by big companies such as: Oracle, Microsoft, or IBM, which have global influences.
+3. NoSQl offers few facilities for ad-hoc questy and analysis. For RDBMS, the coding is much easier.
+4. NoSQL lacks of standardization, RDBMS is more standardizaed. 
+5. RDBMS provide ACID properties(Atomicity, Consistency, Isolation, Durability). NoSQL not so much.
+
+Reference:
+1. https://www.mongodb.com/scale/nosql-vs-relational-databases
+2. https://www.sitepoint.com/sql-vs-nosql-differences/
