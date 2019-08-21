@@ -1,0 +1,58 @@
+---
+title: "Week7Assignment"
+author: "Bin Lin"
+date: "2016-10-16"
+output: html_document
+---
+Assignment Instruction: Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more than one author. For each book, include the title, authors, and two or three other attributes that you find interesting. Take the information that you've selected about these three books, and separately create three files which store the book's information in HTML (using an html table), XML, and JSON formats (e.g. "books.html", "books.xml", and "books.json"). Write R code, using your packages of choice, to load the information from each of the three sources into separate R data frames. Are the three data frames identical?
+
+Loading packages
+```{r}
+#install.packages("XML")
+#install.packages("jsonlite")
+#install.packages("RCurl")
+
+library(XML)
+library(jsonlite)
+library(RCurl)
+```
+
+
+getURL method from RCurl package can help extract data from a url. readHTMLTable function from XML packagehelps in identifying and reading out html tables. In the end, we can display the data in a data frame format. 
+```{r}
+html_url <- "https://raw.githubusercontent.com/blin261/DATA607/master/Week7Assignment/Books.html"
+raw_data <- getURL(html_url)
+book_html <- readHTMLTable(raw_data, header = TRUE, stringsAsFactors = FALSE) 
+book_html <- data.frame(book_html)
+book_html
+```
+
+
+First step is same as we extract data from url to R. xmlParse function can parse the xml file. The top-level node is extracted with the xmlRoot() function. The resulting variable store the root for books. xmlToDataFrame can easily transform the root nodes into a data frame. 
+```{r}
+xml_url <- "https://raw.githubusercontent.com/blin261/DATA607/master/Week7Assignment/Books.xml"
+raw_data <- getURL(xml_url)
+xml_data <- xmlParse(raw_data)
+root <- xmlRoot(xml_data)
+book_xml <- xmlToDataFrame(root)
+book_xml
+```
+
+
+Function fromJSON from jsonlite reads content in JSON format and converts it to R objects. Then it can also be easily transform into a data frame. 
+```{r}
+json_url <- "https://raw.githubusercontent.com/blin261/DATA607/master/Week7Assignment/Books.json"
+json_data <- fromJSON(json_url)
+book_json <- data.frame(json_data)
+book_json
+```
+
+
+Conclusion: All three data frames are slightly different. The data frame generated from XML format, all the variables are factors, However, for the other two format, the data types are all characters. Json looks like more promgramming friendly. Because the original data were created like javascript object. According to the textbook ("Automated Data Collection with R"), JSON is compatible with JavaScript and
+can be directly parsed into JavaScript objects. 
+
+```{r}
+str(book_html)
+str(book_xml)
+str(book_json)
+```
