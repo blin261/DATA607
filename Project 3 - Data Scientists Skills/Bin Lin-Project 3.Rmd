@@ -1,0 +1,157 @@
+---
+title: "Bin Lin - Project 3"
+author: "Bin Lin"
+date: "2016-10-22"
+output: html_document
+---
+
+```{r}
+#install.packages("RMySQL")
+#install.packages("dplyr")
+#install.packages("tidyr")
+#install.packages("ggplot2")
+#install.packages("DBI")
+
+library(DBI)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+library(RMySQL)
+
+
+
+
+```
+
+
+
+Jose's Code
+```{r}
+JA_Data <- read.csv("https://raw.githubusercontent.com/juddanderman/cuny-data-607/master/Project3/linkedin-profiles-skills.csv", encoding="UTF-8", na.strings=c("","NA"), stringsAsFactors = FALSE)
+JA_Data <- cbind("LinkedIn", JA_Data[ , c(10,3,4,2,5,6)], NA)
+JA_Data[ , 2] <- tolower(JA_Data[ , 2])
+JA_Data[ , 2] <- iconv(JA_Data[ , 2], from = "latin1", to = "UTF-8")
+JA_Data <- unique(JA_Data)
+JA_Data$ID <- seq.int(nrow(JA_Data))
+colnames(JA_Data) <- c("Source","Skill","Title","Location","Name","School","Degree","Company","Record_ID")
+t(head(JA_Data, 1))
+
+KC_Data <- read.csv("https://raw.githubusercontent.com/cunyauthor/Project3/master/API_Job.csv", encoding="UTF-8", na.strings=c("","NA"), stringsAsFactors = FALSE)
+KC_Data <- KC_Data[KC_Data[ , 1] != "count",] # Remove heading rows
+KC_Data <- KC_Data[!is.na(KC_Data[ , 5]),] # Remove rows with blank skills
+KC_Data <- cbind(Source = "KDnuggets+Dice", KC_Data[ , c(5,7,9)], NA, NA, NA, KC_Data[ , 8])
+KC_Data[ , 2]  <- as.character(str_extract_all(KC_Data[ , 2] , "l\\=\\S+\\&c"))
+KC_Data[ , 2]  <- str_replace_all(KC_Data[ , 2] , "(l\\=|\\&c)", "")
+KC_Data[ , 2]  <- str_replace_all(KC_Data[ , 2] , "\\+", " ")
+KC_Data$ID <- seq.int(nrow(KC_Data))
+colnames(KC_Data) <- c("Source","Skill","Title","Location","Name","School","Degree","Company","Record_ID")
+t(head(KC_Data, 1))
+
+# I just changed the connection to the MySQL, so that the password and user name #won't be shown. 
+rmysql.settingsfile<-"C:/ProgramData/MySQL/MySQL Server 5.7/my.ini"
+connection <- dbConnect(RMySQL::MySQL(), default.file=rmysql.settingsfile, dbname = "assignment2", user=NULL, password=NULL)
+
+dbSendQuery(connection, 'CREATE SCHEMA IF NOT EXISTS Skills;')
+dbSendQuery(connection, 'USE Skills;')
+dbSendQuery(connection, 'DROP TABLE IF EXISTS tbl_LinkedIn;')
+dbSendQuery(connection, 'DROP TABLE IF EXISTS tbl_KDnuggets_Dice;')
+
+dbWriteTable(connection, "tbl_LinkedIn", JA_Data, append = TRUE, row.names = FALSE)
+dbSendQuery(connection, "ALTER TABLE tbl_LinkedIn
+            MODIFY COLUMN Record_id MEDIUMINT NOT NULL,
+            MODIFY COLUMN Source VARCHAR(25) NOT NULL,
+            MODIFY COLUMN Skill VARCHAR(50) NOT NULL,
+            MODIFY COLUMN Title VARCHAR(250) NULL,
+            MODIFY COLUMN Location VARCHAR(50) NULL,
+            MODIFY COLUMN Name VARCHAR(50) NULL,
+            MODIFY COLUMN School VARCHAR(75) NULL,
+            MODIFY COLUMN Degree VARCHAR(100) NULL,
+            MODIFY COLUMN Company VARCHAR(50) NULL,
+            ADD PRIMARY KEY (Record_id);")
+
+dbWriteTable(connection, "tbl_KDnuggets_Dice", KC_Data, append = TRUE, row.names = FALSE)
+dbSendQuery(connection, "ALTER TABLE tbl_KDnuggets_Dice
+            MODIFY COLUMN Record_id MEDIUMINT NOT NULL,
+            MODIFY COLUMN Source VARCHAR(25) NOT NULL,
+            MODIFY COLUMN Skill VARCHAR(50) NOT NULL,
+            MODIFY COLUMN Title VARCHAR(250) NULL,
+            MODIFY COLUMN Location VARCHAR(50) NULL,
+            MODIFY COLUMN Name VARCHAR(50) NULL,
+            MODIFY COLUMN School VARCHAR(75) NULL,
+            MODIFY COLUMN Degree VARCHAR(100) NULL,
+            MODIFY COLUMN Company VARCHAR(50) NULL,
+            ADD PRIMARY KEY (Record_id);")
+
+All_Data <- dbGetQuery(connection, "SELECT * FROM tbl_LinkedIn
+                       UNION SELECT * FROM tbl_KDnuggets_Dice
+                       ORDER BY Source, Skill, Title;")
+
+```
+
+
+
+
+My Code: 
+I created a barplot for the entire dataset, without regarding to linkedin or KD Nuggets or Dice. The graph shows the top 10 skills and their frequency.
+```{r}
+
+raw_data <- All_Data[!(is.na(All_Data$Skill) & All_Data$Skill != "character(0)"), ]
+a <- which(with(raw_data, table(raw_data$Skill)) > 100)
+head(a)
+
+
+barplot(a[3:12], las=2)
+
+```
+
+
+
+
+I am interested in the rlationship between each company and their most desired employee skills. 
+```{r}
+raw_data <- All_Data%>%
+  select(Company, Skill)%>%
+  na.omit()
+head(raw_data)
+
+
+b <-raw_data%>%
+  group_by(Company, Skill)%>%
+  summarize(count = n())%>%
+  mutate(total = sum(count), percentage = count/total)%>%
+  filter(total > 100 & percentage > 0.03)%>%
+  arrange(desc(total), desc(percentage))
+head(b)
+```
+
+
+
+The first barplot shows different companies actually have different interest of skill sets they want candidates to have. I pick whatever companies have more than 100 positions open. However, I think the better way to do is to get the top 10 companies that are hiring. The percentage I set up is just for the purpose of getting rid off the skills that do not meet most companies' interest.  The second plot looks a little messy. If someone can help me organize it, (for each barplot, the skills can line up from the most frequent to the lleast frequent), I really appreaciate. If not, maybe just take off the second barplot.
+
+
+I also want to connect skills with each schools. But it is actually a bad idea, because a lot of data is missing scholl information. 
+
+```{r}
+ggplot(data = b, aes(x = Skill, y = count, fill = Company)) + geom_bar(stat="identity") + theme(axis.text.x = element_text(angle=90, hjust = 1))
+
+
+ggplot(data = b, aes(x = Skill, y = count, fill = Company)) + geom_bar(stat ="identity", position = "dodge") + facet_wrap(~Company) +
+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+```
+
+
+
+Jose's Code
+```{r}
+dbSendQuery(connection, 'DROP TABLE tbl_LinkedIn;')
+#dbSendQuery(connection, 'DROP TABLE tbl_Friends;')
+dbSendQuery(connection, 'DROP SCHEMA Skills;')
+dbDisconnect(connection)
+```
+
+
+
